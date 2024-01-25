@@ -4,15 +4,15 @@ from ops import *
 import time
 from glob import glob
 def gaussian_noise_layer(input_layer, std):
-    noise = tf.random_normal(shape=tf.shape(input_layer), mean=0.0, stddev=std, dtype=tf.float32)
+    noise = tf.random.normal(shape=tf.shape(input_layer), mean=0.0, stddev=std, dtype=tf.float32)
     return input_layer+noise
 
 def generator_resnet(image, options, reuse=False, name="generator"):
-    with tf.variable_scope(name):
+    with tf.compat.v1.variable_scope(name):
         if reuse:
-            tf.get_variable_scope().reuse_variables()
+            tf.compat.v1.get_variable_scope().reuse_variables()
         else:
-            assert tf.get_variable_scope().reuse is False
+            assert tf.compat.v1.get_variable_scope().reuse is False
         def residule_block_dilated(x, dim, ks=3, s=1, name='res'):
             y = instance_norm(dilated_conv2d(x, dim, ks, s, padding='SAME', name=name + '_c1'), name + '_bn1')
             y = tf.nn.relu(y)
@@ -61,9 +61,9 @@ def generator_resnet(image, options, reuse=False, name="generator"):
 def domain_agnostic_classifier(percep,options, reuse=False,name="percep"):
     with tf.variable_scope(name):
         if reuse:
-            tf.get_variable_scope().reuse_variables()
+            tf.compat.v1.get_variable_scope().reuse_variables()
         else:
-            assert tf.get_variable_scope().reuse is False
+            assert tf.compat.v1.get_variable_scope().reuse is False
         h1 = lrelu(instance_norm(conv2d(percep, options.df_dim * 4, name='d_h1_conv'), 'd_bn1'))
         h2 = lrelu(instance_norm(conv2d(h1, options.df_dim * 2, name='d_h2_conv'), 'd_bn2'))
         h3 = lrelu(instance_norm(conv2d(h2, options.df_dim * 2, name='d_h3_conv'), 'd_bn3'))
@@ -80,7 +80,6 @@ def mae_criterion(in_, target):
 
 def sce_criterion(logits, labels):
     return tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=logits, labels=labels))
-
 
 
 def mae_criterion_list(in_, target):
@@ -128,18 +127,18 @@ class cyclegan(object):
                                       args.phase == 'train'))
 
         self._build_model()
-        self.saver = tf.train.Saver()
+        self.saver = tf.compat.v1.train.Saver()
         self.pool = ImagePool(args.max_size)
 
     def discriminator(self,image, options, reuse=False, name="discriminator"):
         images = []
         for i in range(self.n_scale):
-            images.append(tf.image.resize_bicubic(image, [get_shape(image)[1]//(2**i),get_shape(image)[2]//(2**i)]))
-        with tf.variable_scope(name):
+            images.append(tf.compat.v1.image.resize_bicubic(image, [get_shape(image)[1]//(2**i),get_shape(image)[2]//(2**i)]))
+        with tf.compat.v1.variable_scope(name):
             if reuse:
-                tf.get_variable_scope().reuse_variables()
+                tf.compat.v1.get_variable_scope().reuse_variables()
             else:
-                assert tf.get_variable_scope().reuse is False
+                assert tf.compat.v1.get_variable_scope().reuse is False
             images = dis_down(images,4,2,self.n_scale,options.df_dim,'d_h0_conv_scale_')
             images = dis_down(images,4,2, self.n_scale, options.df_dim*2, 'd_h1_conv_scale_')
             images = dis_down(images,4,2, self.n_scale, options.df_dim * 4, 'd_h2_conv_scale_')
@@ -148,7 +147,7 @@ class cyclegan(object):
             return images
 
     def _build_model(self):
-        self.real_data = tf.placeholder(tf.float32,[self.batch_size, self.image_size, self.image_size*2,self.input_c_dim + self.output_c_dim],name='real_A_and_B_images')
+        self.real_data = tf.compat.v1.placeholder(tf.float32,[self.batch_size, self.image_size, self.image_size*2,self.input_c_dim + self.output_c_dim],name='real_A_and_B_images')
 
         self.real_A = self.real_data[:, :, :, :self.input_c_dim]
         self.real_B = self.real_data[:, :, :, self.input_c_dim:self.input_c_dim + self.output_c_dim]
@@ -213,12 +212,12 @@ class cyclegan(object):
         self.g_rec_real = abs_criterion(self.rec_realA, self.real_A) + abs_criterion(self.rec_realB, self.real_B)
         self.g_rec_cycle = abs_criterion(self.real_A, self.fake_A_) + abs_criterion(self.real_B, self.fake_B_)
 
-        self.fake_A_sample = tf.placeholder(tf.float32,[self.batch_size, self.image_size, self.image_size*2,  self.output_c_dim], name='fake_A_sample')
-        self.fake_B_sample = tf.placeholder(tf.float32,[self.batch_size, self.image_size, self.image_size*2,  self.output_c_dim], name='fake_B_sample')
-        self.rec_A_sample = tf.placeholder(tf.float32,[self.batch_size, self.image_size, self.image_size * 2, self.output_c_dim],name='rec_A_sample')
-        self.rec_B_sample = tf.placeholder(tf.float32,[self.batch_size, self.image_size, self.image_size * 2, self.output_c_dim],name='rec_B_sample')
-        self.rec_fakeA_sample = tf.placeholder(tf.float32, [self.batch_size, self.image_size, self.image_size * 2,self.output_c_dim], name='rec_fakeA_sample')
-        self.rec_fakeB_sample = tf.placeholder(tf.float32, [self.batch_size, self.image_size, self.image_size * 2,self.output_c_dim], name='rec_fakeB_sample')
+        self.fake_A_sample = tf.compat.v1.placeholder(tf.float32,[self.batch_size, self.image_size, self.image_size*2,  self.output_c_dim], name='fake_A_sample')
+        self.fake_B_sample = tf.compat.v1.placeholder(tf.float32,[self.batch_size, self.image_size, self.image_size*2,  self.output_c_dim], name='fake_B_sample')
+        self.rec_A_sample = tf.compat.v1.placeholder(tf.float32,[self.batch_size, self.image_size, self.image_size * 2, self.output_c_dim],name='rec_A_sample')
+        self.rec_B_sample = tf.compat.v1.placeholder(tf.float32,[self.batch_size, self.image_size, self.image_size * 2, self.output_c_dim],name='rec_B_sample')
+        self.rec_fakeA_sample = tf.compat.v1.placeholder(tf.float32, [self.batch_size, self.image_size, self.image_size * 2,self.output_c_dim], name='rec_fakeA_sample')
+        self.rec_fakeB_sample = tf.compat.v1.placeholder(tf.float32, [self.batch_size, self.image_size, self.image_size * 2,self.output_c_dim], name='rec_fakeB_sample')
 
         self.d_loss_item=[]
         self.d_loss_item_rec = []
@@ -265,25 +264,25 @@ class cyclegan(object):
             self.d_loss_recfake = (self.db_loss_recfake + self.da_loss_recfake)
             self.d_loss_item_recfake.append(self.d_loss_recfake)
 
-        self.g_loss_a2b_sum = tf.summary.scalar("g_loss_a2b", self.g_loss_a2b)
-        self.g_loss_b2a_sum = tf.summary.scalar("g_loss_b2a", self.g_loss_b2a)
-        self.g_loss_sum = tf.summary.scalar("g_loss", self.g_loss)
-        self.g_sum = tf.summary.merge([self.g_loss_a2b_sum, self.g_loss_b2a_sum, self.g_loss_sum])
-        self.db_loss_sum = tf.summary.scalar("db_loss", self.db_loss)
-        self.da_loss_sum = tf.summary.scalar("da_loss", self.da_loss)
-        self.d_loss_sum = tf.summary.scalar("d_loss", self.d_loss)
-        self.db_loss_real_sum = tf.summary.scalar("db_loss_real", self.db_loss_real)
-        self.db_loss_fake_sum = tf.summary.scalar("db_loss_fake", self.db_loss_fake)
-        self.da_loss_real_sum = tf.summary.scalar("da_loss_real", self.da_loss_real)
-        self.da_loss_fake_sum = tf.summary.scalar("da_loss_fake", self.da_loss_fake)
-        self.d_sum = tf.summary.merge(
+        self.g_loss_a2b_sum = tf.compat.v1.summary.scalar("g_loss_a2b", self.g_loss_a2b)
+        self.g_loss_b2a_sum = tf.compat.v1.summary.scalar("g_loss_b2a", self.g_loss_b2a)
+        self.g_loss_sum = tf.compat.v1.summary.scalar("g_loss", self.g_loss)
+        self.g_sum = tf.compat.v1.summary.merge([self.g_loss_a2b_sum, self.g_loss_b2a_sum, self.g_loss_sum])
+        self.db_loss_sum = tf.compat.v1.summary.scalar("db_loss", self.db_loss)
+        self.da_loss_sum = tf.compat.v1.summary.scalar("da_loss", self.da_loss)
+        self.d_loss_sum = tf.compat.v1.summary.scalar("d_loss", self.d_loss)
+        self.db_loss_real_sum = tf.compat.v1.summary.scalar("db_loss_real", self.db_loss_real)
+        self.db_loss_fake_sum = tf.compat.v1.summary.scalar("db_loss_fake", self.db_loss_fake)
+        self.da_loss_real_sum = tf.compat.v1.summary.scalar("da_loss_real", self.da_loss_real)
+        self.da_loss_fake_sum = tf.compat.v1.summary.scalar("da_loss_fake", self.da_loss_fake)
+        self.d_sum = tf.compat.v1.summary.merge(
             [self.da_loss_sum, self.da_loss_real_sum, self.da_loss_fake_sum,
              self.db_loss_sum, self.db_loss_real_sum, self.db_loss_fake_sum,
              self.d_loss_sum]
         )
 
-        self.test_A = tf.placeholder(tf.float32,[self.batch_size, self.image_size, self.image_size*2,self.input_c_dim], name='test_A')
-        self.test_B = tf.placeholder(tf.float32,[self.batch_size, self.image_size, self.image_size*2,self.output_c_dim], name='test_B')
+        self.test_A = tf.compat.v1.placeholder(tf.float32,[self.batch_size, self.image_size, self.image_size*2,self.input_c_dim], name='test_A')
+        self.test_B = tf.compat.v1.placeholder(tf.float32,[self.batch_size, self.image_size, self.image_size*2,self.output_c_dim], name='test_B')
 
         self.testB,self.rec_testA,_ = self.generator(self.test_A, self.options, True, name="generatorA2B")
         self.rec_cycle_A,self.refine_testB,_ =self.generator(self.testB, self.options, True, name="generatorB2A")
@@ -291,7 +290,7 @@ class cyclegan(object):
         self.testA,self.rec_testB,_ = self.generator(self.test_B, self.options, True, name="generatorB2A")
         self.rec_cycle_B, self.refine_testA,_ = self.generator(self.testA, self.options, True, name="generatorA2B")
 
-        t_vars = tf.trainable_variables()
+        t_vars = tf.compat.v1.trainable_variables()
 
         self.g_vars = [var for var in t_vars if 'generator' in var.name]
         self.p_vars = [var for var in t_vars if 'percep' in var.name]
@@ -314,50 +313,59 @@ class cyclegan(object):
 
     def train(self, args):
         """Train cyclegan"""
-        self.lr = tf.placeholder(tf.float32, None, name='learning_rate')
+        print("Training...")
+        self.lr = tf.compat.v1.placeholder(tf.float32, None, name='learning_rate')
 
         ### generator
-        self.g_optim = tf.train.AdamOptimizer(self.lr, beta1=args.beta1) \
+        self.g_optim = tf.compat.v1.train.AdamOptimizer(self.lr, beta1=args.beta1) \
             .minimize(self.g_loss, var_list=self.g_vars)
+        print("generator")
 
         ### domain-agnostic classifier
-        self.p_optim = tf.train.AdamOptimizer(self.lr, beta1=args.beta1) \
+        self.p_optim = tf.compat.v1.train.AdamOptimizer(self.lr, beta1=args.beta1) \
             .minimize(self.cls_loss, var_list=self.p_vars)
+        print("domain-agnostic classifier")
 
         ### translation
         self.d_optim_item=[]
         for i in range(self.n_d):
-            self.d_optim = tf.train.AdamOptimizer(self.lr, beta1=args.beta1) \
+            self.d_optim = tf.compat.v1.train.AdamOptimizer(self.lr, beta1=args.beta1) \
                 .minimize(self.d_loss_item[i], var_list=self.d_vars_item[i])
             self.d_optim_item.append(self.d_optim)
+        print("translation")
 
         ### reconstruction
         self.rec_optim_item = []
         for i in range(self.n_d):
-            self.rec_optim = tf.train.AdamOptimizer(self.lr, beta1=args.beta1) \
+            self.rec_optim = tf.compat.v1.train.AdamOptimizer(self.lr, beta1=args.beta1) \
                 .minimize(self.d_loss_item_rec[i], var_list=self.R_vars_item[i])
             self.rec_optim_item.append(self.rec_optim)
+        print("reconstruction")
 
         ### refinement
         self.recfake_optim_item = []
         for i in range(self.n_d):
-            self.recfake_optim = tf.train.AdamOptimizer(self.lr, beta1=args.beta1) \
+            self.recfake_optim = tf.compat.v1.train.AdamOptimizer(self.lr, beta1=args.beta1) \
                 .minimize(self.d_loss_item_recfake[i], var_list=self.refine_vars_item[i])
             self.recfake_optim_item.append(self.recfake_optim)
+        print("refinement")
 
-        init_op = tf.global_variables_initializer()
+        init_op = tf.compat.v1.global_variables_initializer()
         self.sess.run(init_op)
-        self.writer = tf.summary.FileWriter(os.path.join(args.checkpoint_dir,"logs"), self.sess.graph)
+        self.writer = tf.compat.v1.summary.FileWriter(os.path.join(args.checkpoint_dir,"logs"), self.sess.graph)
 
         counter = 1
         start_time = time.time()
+        print("Start time: ",start_time)
 
         if args.continue_train:
             if self.load(args.checkpoint_dir):
                 print(" [*] Load SUCCESS")
             else:
                 print(" [!] Load failed...")
-
+        
+        print("Epochs: ",args.epoch)
+        
         for epoch in range(args.epoch):
             dataA = glob('./datasets/{}/*.*'.format(self.dataset_dir + '/trainA'))
             dataB = glob('./datasets/{}/*.*'.format(self.dataset_dir + '/trainB'))
@@ -432,8 +440,15 @@ class cyclegan(object):
 
         model_dir = "%s_%s" % (self.dataset_dir, self.image_size)
         checkpoint_dir = os.path.join(checkpoint_dir, model_dir)
+        print("checkpoint_dir: ",checkpoint_dir)
+        print("model_dir: ",model_dir)
 
         ckpt = tf.train.get_checkpoint_state(checkpoint_dir)
+        if ckpt:
+            print("ckpt: ",ckpt)
+            print("ckpt.model_checkpoint_path: ",ckpt.model_checkpoint_path)
+        else:
+            print("checkpoint not found")
         if ckpt and ckpt.model_checkpoint_path:
             ckpt_name = os.path.basename(ckpt.model_checkpoint_path)
             self.saver.restore(self.sess, os.path.join(checkpoint_dir, ckpt_name))
