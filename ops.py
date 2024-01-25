@@ -52,7 +52,7 @@ def conv2d(input_, output_dim, ks=4, s=2, stddev=0.02, padding="SAME", name="con
 
 
 def deconv2d(input_, output_dim, ks=4, s=2, stddev=0.02, name="deconv2d"):
-    with tf.variable_scope(name):
+    with tf.compat.v1.variable_scope(name):
         return slim.conv2d_transpose(
             input_,
             output_dim,
@@ -68,7 +68,7 @@ def deconv2d(input_, output_dim, ks=4, s=2, stddev=0.02, name="deconv2d"):
 def dilated_conv2d(
     input_, output_dim, ks=3, s=2, stddev=0.02, padding="SAME", name="conv2d"
 ):
-    with tf.variable_scope(name):
+    with tf.compat.v1.variable_scope(name):
         batch, in_height, in_width, in_channels = [int(d) for d in input_.get_shape()]
         filter = tf.compat.v1.get_variable(
             "filter",
@@ -235,5 +235,5 @@ def get_shape(inputs, name=None):
 
 
 def show_all_variables():
-    model_vars = tf.trainable_variables()
+    model_vars = tf.compat.v1.trainable_variables()
     slim.model_analyzer.analyze_vars(model_vars, print_info=True)

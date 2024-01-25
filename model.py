@@ -91,7 +91,7 @@ def generator_resnet(image, options, reuse=False, name="generator"):
 
 
 def domain_agnostic_classifier(percep, options, reuse=False, name="percep"):
-    with tf.variable_scope(name):
+    with tf.compat.v1.variable_scope(name):
         if reuse:
             tf.compat.v1.get_variable_scope().reuse_variables()
         else:
@@ -622,6 +622,7 @@ class cyclegan(object):
     def train(self, args):
         """Train cyclegan"""
         print("Training...")
+
         self.lr = tf.compat.v1.placeholder(tf.float32, None, name="learning_rate")
 
         ### generator
@@ -668,6 +669,7 @@ class cyclegan(object):
         self.writer = tf.compat.v1.summary.FileWriter(
             os.path.join(args.checkpoint_dir, "logs"), self.sess.graph
         )
+        print("initialization done")
 
         counter = 1
         start_time = time.time()
@@ -684,6 +686,13 @@ class cyclegan(object):
         for epoch in range(args.epoch):
             dataA = glob("./datasets/{}/*.*".format(self.dataset_dir + "/trainA"))
             dataB = glob("./datasets/{}/*.*".format(self.dataset_dir + "/trainB"))
+            if len(dataA) == 0 or len(dataB) == 0:
+                raise Exception(
+                    "No files found in the dataset folder. Please check your dataset path."
+                )
+            else:
+                print("Dataset A: " + str(len(dataA)))
+                print("Dataset B: " + str(len(dataB)))
             np.random.shuffle(dataA)
             np.random.shuffle(dataB)
             batch_idxs = (
@@ -696,6 +705,7 @@ class cyclegan(object):
             )
 
             for idx in range(0, batch_idxs):
+                print("Epoch: [%2d] [%4d/%4d] time: %4.4f" % (epoch, idx, batch_idxs, time.time() - start_time))
                 batch_files = list(
                     zip(
                         dataA[idx * self.batch_size : (idx + 1) * self.batch_size],
