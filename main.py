@@ -23,7 +23,7 @@ parser.add_argument(
     "--train_size",
     dest="train_size",
     type=int,
-    default=1e8,
+    default=1e5,
     help="# images used to train",
 )
 parser.add_argument(
@@ -44,14 +44,14 @@ parser.add_argument(
     "--ngf",
     dest="ngf",
     type=int,
-    default=64,
+    default=32,
     help="# of gen filters in first conv layer",
 )
 parser.add_argument(
     "--ndf",
     dest="ndf",
     type=int,
-    default=64,
+    default=32,
     help="# of discri filters in first conv layer",
 )
 parser.add_argument(
@@ -94,7 +94,7 @@ parser.add_argument(
     "--print_freq",
     dest="print_freq",
     type=int,
-    default=100,
+    default=5,
     help="print the debug information every print_freq iterations",
 )
 parser.add_argument(

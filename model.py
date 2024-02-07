@@ -870,6 +870,13 @@ class cyclegan(object):
     def sample_model(self, sample_dir, epoch, idx):
         dataA = glob("./datasets/{}/*.*".format(self.dataset_dir + "/testA"))
         dataB = glob("./datasets/{}/*.*".format(self.dataset_dir + "/testB"))
+        if len(dataA) == 0 or len(dataB) == 0:
+            raise Exception(
+                "No files found in the test dataset folder. Please check your dataset path."
+            )
+        else:
+            print("Test Dataset A: " + str(len(dataA)))
+            print("Test Dataset B: " + str(len(dataB)))
         np.random.shuffle(dataA)
         np.random.shuffle(dataB)
         batch_files = list(zip(dataA[: self.batch_size], dataB[: self.batch_size]))
@@ -910,17 +917,22 @@ class cyclegan(object):
         merge_B = np.concatenate(
             [real_A, fake_B, rec_A, rec_fakeB, rec_cycle_A], axis=2
         )
+
         check_folder("./{}/{:02d}".format(sample_dir, epoch))
-        save_images(
-            merge_A,
-            [self.batch_size, 1],
-            "./{}/{:02d}/A_{:04d}.jpg".format(sample_dir, epoch, idx),
-        )
-        save_images(
-            merge_B,
-            [self.batch_size, 1],
-            "./{}/{:02d}/B_{:04d}.jpg".format(sample_dir, epoch, idx),
-        )
+        print("Saving images to... ./{}_{:02d}/".format(sample_dir, epoch))
+        try:
+            save_images(
+                merge_A,
+                [self.batch_size, 1],
+                "./{}/{:02d}/A_{:04d}.jpg".format(sample_dir, epoch, idx),
+            )
+            save_images(
+                merge_B,
+                [self.batch_size, 1],
+                "./{}/{:02d}/B_{:04d}.jpg".format(sample_dir, epoch, idx),
+            )
+        except:
+            print("save failed")
 
     def test(self, args):
         """Test cyclegan"""

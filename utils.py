@@ -73,6 +73,7 @@ def get_image(image_path, image_size, is_crop=True, resize_w=64, is_grayscale=Fa
 
 
 def save_images(images, size, image_path):
+    print(images.shape)
     return imsave(inverse_transform(images), size, image_path)
 
 
